@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      padding: 20px;
+    }
+    h2, h3 {
+      color: #333;
+    }
+    form {
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    label, input, select {
+      display: block;
+      margin-bottom: 10px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    input[type="submit"] {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    input[type="submit"]:hover {
+      background-color: #0056b3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    .alert-button {
+      padding: 10px;
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Supplier Purchase Tracking</h2>
+
+  <form id="purchaseForm" onsubmit="event.preventDefault(); submitPurchaseForm();">
+    <label for="supplier">Supplier:</label>
+    <select id="supplier" required></select>
+
+    <label for="amount">Amount:</label>
+    <input type="number" id="amount" required>
+
+    <label for="description">Description:</label>
+    <input type="text" id="description" required>
+
+    <label for="purchaseDate">Purchase Date:</label>
+    <input type="date" id="purchaseDate" required>
+
+    <input type="submit" value="Submit">
+  </form>
+
+  <h3>Show All Debits</h3>
+
+  <button onclick="loadAllSupplierBalances()" class="alert-button">
+    Show All Debits
+  </button>
+
+  <table id="supplierBalanceTable">
+    <thead>
+      <tr>
+        <th>Supplier</th>
+        <th>Total Purchases</th>
+        <th>Total Payments</th>
+        <th>Opening Balance</th>
+        <th>Debit</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div id="summary" style="margin-top: 20px;">
+    <strong>Total Debit:</strong>
+    <span id="totalDebits"></span>
+  </div>
+
+  <script>
+    // Load suppliers into dropdown
+    function loadSuppliers() {
+      google.script.run.withSuccessHandler(function(suppliers) {
+        var supplierDropdown = document.getElementById("supplier");
+        suppliers.forEach(function(supplier) {
+          var option = document.createElement("option");
+          option.textContent = supplier;
+          supplierDropdown.appendChild(option);
+        });
+      }).getSuppliers();
+    }
+
+    // Submit a purchase form
+    function submitPurchaseForm() {
+      var supplier = document.getElementById("supplier").value;
+      var amount = document.getElementById("amount").value;
+      var description = document.getElementById("description").value;
+      var date = document.getElementById("purchaseDate").value;
+
+      google.script.run.submitPurchase(supplier, amount, description, date);
+      alert("Record added successfully!");
+      document.getElementById("purchaseForm").reset();
+    }
+
+    // Load all supplier balances
+    function loadAllSupplierBalances() {
+      google.script.run.withSuccessHandler(function(data) {
+        var balanceTable = document.getElementById("supplierBalanceTable").getElementsByTagName('tbody')[0];
+        balanceTable.innerHTML = "";  // Clear table rows
+
+        data.supplierData.forEach(function(balance) {
+          var row = balanceTable.insertRow();
+          row.insertCell(0).textContent = balance.supplier;
+          row.insertCell(1).textContent = balance.totalPurchases;
+          row.insertCell(2).textContent = balance.totalPayments;
+          row.insertCell(3).textContent = balance.openingBalance;
+          row.insertCell(4).textContent = balance.debit;
+        });
+
+        // Update total debit summary
+        document.getElementById("totalDebits").textContent = data.totalDebits;
+      }).getAllSupplierBalances();
+    }
+
+    // Load suppliers when the page is ready
+    window.onload = function() {
+      loadSuppliers();
+    };
+  </script>
+
+</body>
+</html>
